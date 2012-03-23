@@ -1,0 +1,24 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C# Express 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RTS Scroll Test", "RTS Scroll Test\RTS Scroll Test\RTS Scroll Test.csproj", "{15790ACB-0EDD-46D8-A0FA-2E35AB743C54}"
+EndProject
+Project("{96E2B04D-8817-42C6-938A-82C39BA4D311}") = "RTS Scroll TestContent", "RTS Scroll Test\RTS Scroll TestContent\RTS Scroll TestContent.contentproj", "{C3D52BA3-DD69-4363-ACE1-2C5CD4596D1E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{15790ACB-0EDD-46D8-A0FA-2E35AB743C54}.Debug|x86.ActiveCfg = Debug|x86
+		{15790ACB-0EDD-46D8-A0FA-2E35AB743C54}.Debug|x86.Build.0 = Debug|x86
+		{15790ACB-0EDD-46D8-A0FA-2E35AB743C54}.Release|x86.ActiveCfg = Release|x86
+		{15790ACB-0EDD-46D8-A0FA-2E35AB743C54}.Release|x86.Build.0 = Release|x86
+		{C3D52BA3-DD69-4363-ACE1-2C5CD4596D1E}.Debug|x86.ActiveCfg = Debug|x86
+		{C3D52BA3-DD69-4363-ACE1-2C5CD4596D1E}.Release|x86.ActiveCfg = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
