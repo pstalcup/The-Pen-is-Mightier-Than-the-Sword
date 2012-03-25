@@ -14,12 +14,21 @@ namespace RTS_Scroll_Test
 {
     class Unit
     {
+        //identification
+        static int _id = 0;
+        public int ID;
+        public Team Team;
+        //collision
         public Rectangle HardCollisionBox;
         public Rectangle SoftCollisionBox;
+        //movement
         public int Speed;
         public Vector2 Destination;
+        private Vector2 _last;
+        //drawing
         public Texture2D Texture;
-
+        public Texture2D Portrait;
+        public Texture2D ActionTexture;
         public Rectangle DrawArea
         {
             get
@@ -27,6 +36,7 @@ namespace RTS_Scroll_Test
                 return HardCollisionBox;
             }
         }
+        //position
         private Vector2 _center;
         public Vector2 Center
         {
@@ -46,34 +56,42 @@ namespace RTS_Scroll_Test
                 _center = value;
 
                 HardCollisionBox = new Rectangle(((int)value.X - w / 2), ((int)value.Y - h / 2), w, h);
+
+                w = SoftCollisionBox.Width;
+                h = SoftCollisionBox.Height;
+
+                SoftCollisionBox = new Rectangle(((int)value.X - w / 2), ((int)value.Y - h / 2), w, h);
             }
         }
 
 
-        public Unit(int x, int y, int w,int h,Texture2D texture)
+        public Unit(int x, int y, int w,int h,Texture2D texture,Texture2D portrait)
         {
+            ID = _id++;
+
             HardCollisionBox = new Rectangle(0, 0, w, h);
+            SoftCollisionBox = new Rectangle(0, 0, w + (w / 4), h + (h / 4));
+
             Center = new Vector2(x, y);
+
             Destination = new Vector2(x, y);
-            Speed = 5;
+            Speed = 10; //default unit speed
+
             Texture = texture;
+            Portrait = portrait;
         }
 
         public Boolean CollidesWith(Unit u)
         {
             return u.HardCollisionBox.Intersects(HardCollisionBox);
         }
-        public Boolean Buffers(Unit u)
-        {
-            return u.SoftCollisionBox.Intersects(SoftCollisionBox);
-        }
         public Boolean Arrived()
         {
-            return HardCollisionBox.Contains((int)Destination.X, (int)Destination.Y);
+            return Vector2.Distance(Destination, Center) < Speed;
         }
         public void Update()
         {
-            if (Vector2.Distance(Destination, Center) < Speed)
+            if (Arrived())
             {
                 Center = Destination;
             }
@@ -81,8 +99,21 @@ namespace RTS_Scroll_Test
             {
                 Vector2 path = Destination - Center;
                 path.Normalize();
+                _last = Center;
                 Center += path * Speed;
             }
+        }
+        public void UndoUpdate()
+        {
+            Center = _last;
+        }
+        public Boolean IsMoving()
+        {
+            return !(Center == _last && Center != Destination);
+        }
+        public virtual void Action(int x,int y,List<Unit> units)
+        {
+            Destination = new Vector2(x, y);
         }
     }
 }

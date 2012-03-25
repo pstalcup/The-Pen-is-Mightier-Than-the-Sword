@@ -19,6 +19,33 @@
       <Output>C:\Users\Patrick\documents\visual studio 2010\Projects\RTS Scroll Test\RTS Scroll Test\RTS Scroll Test\bin\x86\Debug\Content\Unit.xnb</Output>
       <Time>2012-03-23T10:04:36.9971619-04:00</Time>
     </Item>
+    <Item>
+      <Source>attack.png</Source>
+      <Name>attack</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>TextureProcessor</Processor>
+      <Options>None</Options>
+      <Output>C:\Users\Patrick\documents\visual studio 2010\Projects\RTS Scroll Test\RTS Scroll Test\RTS Scroll Test\bin\x86\Debug\Content\attack.xnb</Output>
+      <Time>2012-03-25T16:33:33.2864934-04:00</Time>
+    </Item>
+    <Item>
+      <Source>move.png</Source>
+      <Name>move</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>TextureProcessor</Processor>
+      <Options>None</Options>
+      <Output>C:\Users\Patrick\documents\visual studio 2010\Projects\RTS Scroll Test\RTS Scroll Test\RTS Scroll Test\bin\x86\Debug\Content\move.xnb</Output>
+      <Time>2012-03-25T16:33:33.3024943-04:00</Time>
+    </Item>
+    <Item>
+      <Source>stop.png</Source>
+      <Name>stop</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>TextureProcessor</Processor>
+      <Options>None</Options>
+      <Output>C:\Users\Patrick\documents\visual studio 2010\Projects\RTS Scroll Test\RTS Scroll Test\RTS Scroll Test\bin\x86\Debug\Content\stop.xnb</Output>
+      <Time>2012-03-25T16:33:33.3034944-04:00</Time>
+    </Item>
     <BuildSuccessful>true</BuildSuccessful>
     <Settings>
       <TargetPlatform>Windows</TargetPlatform>

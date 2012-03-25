@@ -6,3 +6,6 @@ c:\users\patrick\documents\visual studio 2010\Projects\RTS Scroll Test\RTS Scrol
 c:\users\patrick\documents\visual studio 2010\Projects\RTS Scroll Test\RTS Scroll Test\RTS Scroll Test\obj\x86\Debug\RTS Scroll Test.pdb
 c:\users\patrick\documents\visual studio 2010\Projects\RTS Scroll Test\RTS Scroll Test\RTS Scroll Test\bin\x86\Debug\Content\font.xnb
 C:\Users\Patrick\documents\visual studio 2010\Projects\RTS Scroll Test\RTS Scroll Test\RTS Scroll Test\bin\x86\Debug\Content\Unit.xnb
+C:\Users\Patrick\documents\visual studio 2010\Projects\RTS Scroll Test\RTS Scroll Test\RTS Scroll Test\bin\x86\Debug\Content\attack.xnb
+C:\Users\Patrick\documents\visual studio 2010\Projects\RTS Scroll Test\RTS Scroll Test\RTS Scroll Test\bin\x86\Debug\Content\move.xnb
+C:\Users\Patrick\documents\visual studio 2010\Projects\RTS Scroll Test\RTS Scroll Test\RTS Scroll Test\bin\x86\Debug\Content\stop.xnb
