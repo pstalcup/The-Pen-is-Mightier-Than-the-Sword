@@ -69,17 +69,18 @@ namespace RTS_Scroll_Test
         Rectangle taskBar;
 
         //action box stuff
+
         Rectangle actionBox;
         Rectangle actionButton;
         Rectangle stopButton;
         Rectangle moveButton;
 
+        enum MouseActionState { Normal, Stop, Action, Move };
+        MouseActionState currentMouseActionState;
+
         //Party selestion stuff
         Rectangle partyBox;
-        int portraitSize;
-        int portraitMargin;
-        int portraitsPerRow;
-        int portraitMaxRows;
+        List<Rectangle> portraits;
 
         //Minimap stuff
         Rectangle minimapArea;
@@ -132,10 +133,13 @@ namespace RTS_Scroll_Test
 
             units = new List<Unit>();
             selected = new List<Unit>();
+            portraits = new List<Rectangle>();
 
             random = new Random();
 
             player = new Team("Player", Color.Blue);
+            enemy = new Team("Enemy", Color.Red);
+            neutral = new Team("Neutral", Color.LightGray);
 
             for (int x = 0; x < GRID_WIDTH; x++)
             {
@@ -149,8 +153,6 @@ namespace RTS_Scroll_Test
 
             //CONSTANTS
             minimapScale = 4;
-            portraitMargin = 5;
-            portraitSize = 50;
             zoom = 1.0f;
             zoomFactor = 0.01f;
             scrollSpeed = 5;
@@ -215,97 +217,127 @@ namespace RTS_Scroll_Test
             KeyboardState currentKeyboard = Keyboard.GetState();
 
             //generic mouse input
-            if (currentMouse.LeftButton == ButtonState.Pressed)
+
+            int mx = currentMouse.X;
+            int my = currentMouse.Y;
+
+            int ax = (int)(mx / zoom + zoomScreen.X);
+            int ay = (int)(my / zoom + zoomScreen.Y);
+
+            //LEFTCLICKING
+
+            if (minimapArea.Contains(mx, my) && currentMouse.LeftButton == ButtonState.Pressed)
             {
-                if (minimapArea.Contains(currentMouse.X, currentMouse.Y))
+                int gx = (mx - minimapArea.X) / minimapScale;
+                int gy = (my - minimapArea.Y) / minimapScale;
+
+                int lx = screen.X;
+                int ly = screen.Y;
+
+                screen.X = (gx * GRID_PIXEL) - screen.Width / 2;
+                screen.Y = (gy * GRID_PIXEL) - screen.Height / 2;
+
+                ZoomScreen();
+
+                if (!maxSize.Contains(zoomScreen))
                 {
-                    int gx = (currentMouse.X - minimapArea.X) / minimapScale;
-                    int gy = (currentMouse.Y - minimapArea.Y) / minimapScale;
-
-                    int lx = screen.X;
-                    int ly = screen.Y;
-
-                    screen.X = (gx * GRID_PIXEL) - screen.Width / 2;
-                    screen.Y = (gy * GRID_PIXEL) - screen.Height / 2;
-
+                    screen.X = lx;
+                    screen.Y = ly;
                     ZoomScreen();
-
-                    if (!maxSize.Contains(zoomScreen))
+                }
+            }
+            else if (IsPressed(stopButton, currentMouse))
+            {
+                foreach (Unit u in units)
+                {
+                    u.Destination = u.Center;
+                }
+                currentMouseActionState = MouseActionState.Stop;
+            }
+            else if (IsPressed(moveButton, currentMouse))
+            {
+                currentMouseActionState = MouseActionState.Move;
+            }
+            else if (IsPressed(actionButton, currentMouse))
+            {
+                currentMouseActionState = MouseActionState.Action;
+            }
+            else if (screen.Contains(mx + screen.X, my + screen.Y))
+            {
+                if (currentMouse.LeftButton == ButtonState.Pressed)
+                {
+                    if (currentMouseActionState == MouseActionState.Action)
                     {
-                        screen.X = lx;
-                        screen.Y = ly;
-                        ZoomScreen();
+                        foreach (Unit u in units)
+                        {
+                            u.Action(ax, ay, units);
+                        }
                     }
+                    else if (currentMouseActionState == MouseActionState.Move)
+                    {
+                        Vector2 d = new Vector2(ax, ay);
+                        foreach (Unit u in selected)
+                        {
+                            u.Destination = d;
+                        }
+                    }
+                    else if (currentMouseActionState == MouseActionState.Stop)
+                    {
+                    }
+                    else if (currentMouseActionState == MouseActionState.Normal)
+                    {
+                        if (lastMouse.LeftButton == ButtonState.Pressed)
+                        {
+
+                            int width = mx - ((int)lastLeftClick.X);
+                            int height = my - ((int)lastLeftClick.Y);
+
+                            selection = new Rectangle((int)lastLeftClick.X, (int)lastLeftClick.Y, width, height);
+                        }
+                        else
+                        {
+                            lastLeftClick = new Vector2(mx, my);
+                            selection = new Rectangle((int)lastLeftClick.X, (int)lastLeftClick.Y, 0, 0);
+                        }
+                    }
+                    currentMouseActionState = MouseActionState.Normal;
                 }
                 else
                 {
                     if (lastMouse.LeftButton == ButtonState.Pressed)
                     {
-                        int width = currentMouse.X - ((int)lastLeftClick.X);
-                        int height = currentMouse.Y - ((int)lastLeftClick.Y);
-
-                        selection = new Rectangle((int)lastLeftClick.X, (int)lastLeftClick.Y, width, height);
-                    }
-                    else
-                    {
-                        lastLeftClick = new Vector2(currentMouse.X, currentMouse.Y);
-                        selection = new Rectangle((int)lastLeftClick.X, (int)lastLeftClick.Y, 0, 0);
-                    }
-                }
-            }
-            else
-            {
-                if (lastMouse.LeftButton == ButtonState.Pressed)
-                {
-                    if (!currentKeyboard.IsKeyDown(Keys.LeftShift) && !currentKeyboard.IsKeyDown(Keys.RightShift))
-                    {
-                        selected.Clear();
-                    }
-
-                    Rectangle offsetSelection = new Rectangle((int)(selection.X / zoom), (int)(selection.Y / zoom), (int)(selection.Width / zoom), (int)(selection.Height / zoom));
-                    ZoomScreen();
-                    offsetSelection.Offset(zoomScreen.X, zoomScreen.Y);
-
-                    foreach (Unit u in units)
-                    {
-                        if (offsetSelection.Intersects(u.HardCollisionBox) && !selected.Contains(u))
+                        Rectangle scaleSel = new Rectangle((int)(selection.X * zoom + zoomScreen.X), (int)(selection.Y * zoom + zoomScreen.Y), (int)(selection.Width * zoom), (int)(selection.Height * zoom));
+                        if (!currentKeyboard.IsKeyDown(Keys.LeftShift) && !currentKeyboard.IsKeyDown(Keys.RightShift))
                         {
-                            selected.Add(u);
+                            selected.Clear();
                         }
+
+                        foreach (Unit u in player.Units)
+                        {
+                            if (scaleSel.Intersects(u.HardCollisionBox) && !selected.Contains(u) && selected.Count < portraits.Count)
+                            {
+                                selected.Add(u);
+                            }
+                        }
+                        selection = new Rectangle(-1, -1, 0, 0);
+                        lastLeftClick = new Vector2(-1, -1);
                     }
-                    lastLeftClick = new Vector2(-1, -1);
                 }
-
             }
-            if (currentMouse.RightButton == ButtonState.Pressed && lastMouse.RightButton == ButtonState.Released)
+
+            //RIGHTCLICKING
+
+            if (currentMouse.RightButton == ButtonState.Pressed)
             {
-                ZoomScreen();
-
-                int tx = currentMouse.X + zoomScreen.X;
-                int ty = currentMouse.Y + zoomScreen.Y;
-
-                if (minimapArea.Contains(currentMouse.X, currentMouse.Y))
+                if (lastMouse.RightButton == ButtonState.Released)
                 {
-                    tx = (GRID_PIXEL * (currentMouse.X - minimapArea.X) / minimapScale) + GRID_PIXEL / 2;
-                    ty = (GRID_PIXEL * (currentMouse.Y - minimapArea.Y) / minimapScale) + GRID_PIXEL / 2;
-                }
-                foreach (Unit u in selected)
-                {
-                    u.Destination = new Vector2(tx, ty);
+                    Vector2 d = new Vector2(ax, ay);
+                    foreach (Unit u in selected)
+                    {
+                        u.Destination = d;
+                    }
                 }
             }
-
-            if (currentMouse.ScrollWheelValue != lastMouse.ScrollWheelValue)
-            {
-                float lZoom = zoom;
-                zoom += zoomFactor * (currentMouse.ScrollWheelValue > lastMouse.ScrollWheelValue ? 1 : -1);
-                ZoomScreen();
-                if (!maxSize.Contains(zoomScreen) || zoom < 0.25f || zoom > 1.5f)
-                {
-                    zoom = lZoom;
-                }
-            }
-
             //screen scrolling logic
             if (scrolledLast || (currentMouse.X != lastMouse.X && currentMouse.Y != lastMouse.Y))
             {
@@ -327,18 +359,30 @@ namespace RTS_Scroll_Test
                 {
                     dx = scrollSpeed;
                 }
-                if (dx != 0 || dy != 0)
+                if (dx != 0)
                 {
                     scrolledLast = true;
-                    screen.Offset(dx, dy);
+                    screen.Offset(dx, 0);
                     ZoomScreen();
                     if (!maxSize.Contains(zoomScreen))
                     {
-                        screen.Offset(-dx, -dy);
+                        screen.Offset(-dx, 0);
+                        ZoomScreen();
+                    }
+                }
+                if (dy != 0)
+                {
+                    scrolledLast = true;
+                    screen.Offset(0,dy);
+                    ZoomScreen();
+                    if (!maxSize.Contains(zoomScreen))
+                    {
+                        screen.Offset(0,-dy);
                         ZoomScreen();
                     }
                 }
             }
+
             //generic keyboard input
             if (currentKeyboard.IsKeyDown(Keys.N) && lastKeyboard.IsKeyUp(Keys.N))
             {
@@ -347,15 +391,28 @@ namespace RTS_Scroll_Test
                 {
                     int rx = random.Next(screen.X, screen.X + screen.Width);
                     int ry = random.Next(screen.Y, screen.Y + screen.Height);
-                    toAdd = new Unit(rx, ry, 50, 50, unitTexture, unitTexture);
+                    toAdd = new Unit(rx, ry, 50, 50, unitTexture, unitTexture, attack);
                 } while (!maxSize.Contains(toAdd.DrawArea));
                 units.Add(toAdd);
-                player.AddUnit(toAdd);
+                if (currentKeyboard.IsKeyDown(Keys.RightShift) || currentKeyboard.IsKeyDown(Keys.LeftShift))
+                {
+                    enemy.AddUnit(toAdd);
+                }
+                else
+                {
+                    player.AddUnit(toAdd);
+                }
             }
             if (currentKeyboard.IsKeyDown(Keys.F) && lastKeyboard.IsKeyUp(Keys.F))
             {
                 graphics.ToggleFullScreen();
                 CalculateScreen();
+            }
+            if (currentKeyboard.IsKeyDown(Keys.S) && lastKeyboard.IsKeyUp(Keys.S))
+            {
+                Team temp = player;
+                player = enemy;
+                enemy = temp;
             }
             if (currentKeyboard.IsKeyDown(Keys.Escape) && lastKeyboard.IsKeyUp(Keys.Escape))
             {
@@ -436,7 +493,7 @@ namespace RTS_Scroll_Test
             {
                 toDraw = u.DrawArea;
                 toDraw.Offset(-zoomScreen.X, -zoomScreen.Y);
-                spriteBatch.Draw(u.Texture, toDraw, Color.White);
+                spriteBatch.Draw(u.Texture, toDraw, u.Team.TeamColor);
                 if (selected.Contains(u))
                 {
                     OutlineRectangle(toDraw, Color.Blue, 1);
@@ -445,11 +502,32 @@ namespace RTS_Scroll_Test
 
             spriteBatch.End();
 
-            //things of no zoom
-            spriteBatch.Begin();
+            spriteBatch.Begin(); //unscaled
+
+            DrawUI();
+
+            spriteBatch.End();
+
+            base.Draw(gameTime);
+        }
+
+        public void DrawUI()
+        {
+
+            Rectangle toDraw;
+
+            Vector2 offset = sf.MeasureString(player.TeamName);
+
+            toDraw = new Rectangle(10,10,(int)offset.X,(int)offset.Y);
+
+            spriteBatch.Draw(block, toDraw, Color.White);
+            toDraw.Offset(-1, -1);
+            toDraw.Width += 1;
+            toDraw.Height += 1;
+            OutlineRectangle(toDraw, Color.Black, 1);
 
             spriteBatch.DrawString(sf, player.TeamName, new Vector2(10, 10), player.TeamColor);
-
+            
             //render the bottom bar
             spriteBatch.Draw(block, taskBar, Color.DarkOliveGreen);
             OutlineRectangle(taskBar, Color.Black, 3);
@@ -461,11 +539,36 @@ namespace RTS_Scroll_Test
 
             //draw the buttons in the action box
             spriteBatch.Draw(stop, stopButton, Color.White);
-            OutlineRectangle(stopButton, Color.Black, 1);
+            Color outline = Color.Black;
+            if (currentMouseActionState == MouseActionState.Stop)
+            {
+                outline = Color.Blue;
+            }
+            else
+            {
+                outline = Color.Black;
+            }
+            OutlineRectangle(stopButton, outline, 1);
             spriteBatch.Draw(move, moveButton, Color.White);
-            OutlineRectangle(moveButton, Color.Black, 1);
+            if (currentMouseActionState == MouseActionState.Move)
+            {
+                outline = Color.Blue;
+            }
+            else
+            {
+                outline = Color.Black;
+            }
+            OutlineRectangle(moveButton, outline, 1);
             spriteBatch.Draw(attack, actionButton, Color.White);
-            OutlineRectangle(actionButton, Color.Black, 1);
+            if (currentMouseActionState == MouseActionState.Action)
+            {
+                outline = Color.Blue;
+            }
+            else
+            {
+                outline = Color.Black;
+            }
+            OutlineRectangle(actionButton, outline, 1);
 
             int mx = minimapArea.X;
             int my = minimapArea.Y;
@@ -479,24 +582,9 @@ namespace RTS_Scroll_Test
                 }
             }
 
-            int r = 0;
-            int c = 0;
-
-            foreach (Unit u in selected)
+            for (int i = 0; i < selected.Count; i++)
             {
-                toDraw = new Rectangle(partyBox.X + portraitMargin + (portraitMargin + portraitSize) * c, partyBox.Y + portraitMargin + (portraitMargin + portraitSize) * r, portraitSize, portraitSize);
-                spriteBatch.Draw(u.Portrait, toDraw, Color.White);
-                OutlineRectangle(toDraw, Color.Black, 1);
-                c++;
-                if (c == portraitsPerRow)
-                {
-                    c = 0;
-                    r++;
-                }
-                if (r == portraitMaxRows)
-                {
-                    break;
-                }
+                spriteBatch.Draw(selected[i].Portrait, portraits[i], Color.White);
             }
 
             toDraw = new Rectangle(mx + minimapScale * zoomScreen.X / GRID_PIXEL, my + minimapScale * zoomScreen.Y / GRID_PIXEL, (minimapScale * zoomScreen.Width / GRID_PIXEL), (minimapScale * zoomScreen.Height / GRID_PIXEL));
@@ -506,10 +594,6 @@ namespace RTS_Scroll_Test
             {
                 OutlineRectangle(selection, Color.Blue, 1);
             }
-
-            spriteBatch.End();
-
-            base.Draw(gameTime);
         }
 
         public void OutlineRectangle(Rectangle r, Color c, int thick)
@@ -546,7 +630,7 @@ namespace RTS_Scroll_Test
             int newW = graphics.GraphicsDevice.PresentationParameters.BackBufferWidth;
             int newH = graphics.GraphicsDevice.PresentationParameters.BackBufferHeight;
 
-            int scroll_box_size = 100;
+            int scroll_box_size = 50;
             int taskbar_size = 150;
 
             screen = new Rectangle(0, 0, newW, newH - taskbar_size);
@@ -566,18 +650,178 @@ namespace RTS_Scroll_Test
             scrollLeft = new Rectangle(0, 0, scroll_box_size, newH);
             scrollRight = new Rectangle(newW - scroll_box_size, 0, scroll_box_size, newH);
 
-            portraitsPerRow = partyBox.Width / (portraitSize + portraitMargin);
-            portraitMaxRows = partyBox.Height / (portraitSize + portraitMargin);
+            int portraitSize = 50;
+            int portraitMargin = 5;
+
+            int portraitsPerRow = partyBox.Width / (portraitSize + portraitMargin);
+            int portraitMaxRows = partyBox.Height / (portraitSize + portraitMargin);
+
+            int r = 0;
+            int c = 0;
+
+            portraits.Clear();
+
+            for (int i = 0; i < portraitsPerRow * portraitMaxRows; i++)
+            {
+                Rectangle toDraw = new Rectangle(partyBox.X + portraitMargin + (portraitMargin + portraitSize) * c, partyBox.Y + portraitMargin + (portraitMargin + portraitSize) * r, portraitSize, portraitSize);
+                c++;
+                if (c == portraitsPerRow)
+                {
+                    c = 0;
+                    r++;
+                }
+                portraits.Add(toDraw);
+            }
 
             int buttonWidth = 30;
             int buttonBuffer = 10;
 
             moveButton = new Rectangle(actionBox.X + buttonBuffer, actionBox.Y + buttonBuffer, buttonWidth, buttonWidth);
-            actionButton = new Rectangle(actionBox.X + actionBox.Width/2 - buttonWidth/2, actionBox.Y + buttonBuffer, buttonWidth, buttonWidth);
-            stopButton = new Rectangle(actionBox.X + actionBox.Width - buttonBuffer - buttonWidth , actionBox.Y + 10, buttonWidth, buttonWidth);
+            actionButton = new Rectangle(actionBox.X + actionBox.Width / 2 - buttonWidth / 2, actionBox.Y + buttonBuffer, buttonWidth, buttonWidth);
+            stopButton = new Rectangle(actionBox.X + actionBox.Width - buttonBuffer - buttonWidth, actionBox.Y + 10, buttonWidth, buttonWidth);
 
             ZoomScreen();
         }
-
+        public Boolean IsPressed(Rectangle button, MouseState ms)
+        {
+            return button.Contains(ms.X, ms.Y) && ms.LeftButton == ButtonState.Pressed;
+        }
     }
 }
+/*
+ * 
+            if (currentMouse.LeftButton == ButtonState.Pressed)
+            {
+                //various buttons
+                if (stopButton.Contains(currentMouse.X, currentMouse.Y))
+                {
+                    currentMouseActionState = MouseActionState.Stop;
+                    foreach (Unit u in selected)
+                    {
+                        u.Destination = u.Center;
+                    }
+                }
+                else if (actionButton.Contains(currentMouse.X, currentMouse.Y) && selected.Count > 0)
+                {
+                    currentMouseActionState = MouseActionState.Action;
+                }
+                else if (moveButton.Contains(currentMouse.X, currentMouse.Y) && selected.Count > 0)
+                {
+                    currentMouseActionState = MouseActionState.Move;
+                }
+                else if (minimapArea.Contains(currentMouse.X, currentMouse.Y) && selected.Count > 0)
+                {
+                    int gx = (currentMouse.X - minimapArea.X) / minimapScale;
+                    int gy = (currentMouse.Y - minimapArea.Y) / minimapScale;
+
+                    int lx = screen.X;
+                    int ly = screen.Y;
+
+                    screen.X = (gx * GRID_PIXEL) - screen.Width / 2;
+                    screen.Y = (gy * GRID_PIXEL) - screen.Height / 2;
+
+                    ZoomScreen();
+
+                    if (!maxSize.Contains(zoomScreen))
+                    {
+                        screen.X = lx;
+                        screen.Y = ly;
+                        ZoomScreen();
+                    }
+                }
+                else if(screen.Contains(currentMouse.X,currentMouse.Y))
+                {
+
+                    int ax = (int)(currentMouse.X * zoom + zoomScreen.X);
+                    int ay = (int)(currentMouse.Y * zoom + zoomScreen.Y);
+
+                    Console.WriteLine(currentMouseActionState +" "+ performedAction);
+
+                    if (currentMouseActionState == MouseActionState.Action)
+                    {
+                        foreach (Unit u in selected)
+                        {
+                            u.Action(ax, ay, units);
+                        }
+                        performedAction = true;
+                    }
+                    else if (currentMouseActionState == MouseActionState.Move)
+                    {
+                        foreach (Unit u in selected)
+                        {
+                            u.Destination = new Vector2(ax, ay);
+                        }
+                        performedAction = true;
+                    }
+                    else
+                    {
+                        if (lastMouse.LeftButton == ButtonState.Pressed && !performedAction)
+                        {
+                            int width = currentMouse.X - ((int)lastLeftClick.X);
+                            int height = currentMouse.Y - ((int)lastLeftClick.Y);
+
+                            selection = new Rectangle((int)lastLeftClick.X, (int)lastLeftClick.Y, width, height);
+                        }
+                        else
+                        {
+                            performedAction = false;
+                            lastLeftClick = new Vector2(currentMouse.X, currentMouse.Y);
+                            selection = new Rectangle((int)lastLeftClick.X, (int)lastLeftClick.Y, 0, 0);
+                        }
+                    }
+                    currentMouseActionState = MouseActionState.Normal;
+                }
+            }
+            else
+            {
+                if (lastMouse.LeftButton == ButtonState.Pressed)
+                {
+                    if (!currentKeyboard.IsKeyDown(Keys.LeftShift) && !currentKeyboard.IsKeyDown(Keys.RightShift))
+                    {
+                        selected.Clear();
+                    }
+
+                    Rectangle offsetSelection = new Rectangle((int)(selection.X / zoom), (int)(selection.Y / zoom), (int)(selection.Width / zoom), (int)(selection.Height / zoom));
+                    ZoomScreen();
+                    offsetSelection.Offset(zoomScreen.X, zoomScreen.Y);
+
+                    foreach (Unit u in units)
+                    {
+                        if (offsetSelection.Intersects(u.HardCollisionBox) && !selected.Contains(u))
+                        {
+                            selected.Add(u);
+                        }
+                    }
+                    lastLeftClick = new Vector2(-1, -1);
+                }
+
+            }
+            if (currentMouse.RightButton == ButtonState.Pressed && lastMouse.RightButton == ButtonState.Released)
+            {
+                ZoomScreen();
+
+                int tx = currentMouse.X + zoomScreen.X;
+                int ty = currentMouse.Y + zoomScreen.Y;
+
+                if (minimapArea.Contains(currentMouse.X, currentMouse.Y))
+                {
+                    tx = (GRID_PIXEL * (currentMouse.X - minimapArea.X) / minimapScale) + GRID_PIXEL / 2;
+                    ty = (GRID_PIXEL * (currentMouse.Y - minimapArea.Y) / minimapScale) + GRID_PIXEL / 2;
+                }
+                foreach (Unit u in selected)
+                {
+                    u.Destination = new Vector2(tx, ty);
+                }
+            }
+
+            if (currentMouse.ScrollWheelValue != lastMouse.ScrollWheelValue)
+            {
+                float lZoom = zoom;
+                zoom += zoomFactor * (currentMouse.ScrollWheelValue > lastMouse.ScrollWheelValue ? 1 : -1);
+                ZoomScreen();
+                if (!maxSize.Contains(zoomScreen) || zoom < 0.25f || zoom > 1.5f)
+                {
+                    zoom = lZoom;
+                }
+            }
+ */

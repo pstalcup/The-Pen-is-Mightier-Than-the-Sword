@@ -65,7 +65,7 @@ namespace RTS_Scroll_Test
         }
 
 
-        public Unit(int x, int y, int w,int h,Texture2D texture,Texture2D portrait)
+        public Unit(int x, int y, int w, int h, Texture2D texture, Texture2D portrait)
         {
             ID = _id++;
 
@@ -79,6 +79,12 @@ namespace RTS_Scroll_Test
 
             Texture = texture;
             Portrait = portrait;
+        }
+
+        public Unit(int x, int y, int w, int h, Texture2D t, Texture2D p, Texture2D action)
+            : this(x, y, w, h, t, p)
+        {
+            ActionTexture = action;
         }
 
         public Boolean CollidesWith(Unit u)
@@ -111,7 +117,7 @@ namespace RTS_Scroll_Test
         {
             return !(Center == _last && Center != Destination);
         }
-        public virtual void Action(int x,int y,List<Unit> units)
+        public virtual void Action(int x, int y, List<Unit> units)
         {
             Destination = new Vector2(x, y);
         }
